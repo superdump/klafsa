@@ -35,6 +35,15 @@ The following would parse `model.gltf` to identify textures compressed with JPEG
 klafsa gltf --backend kram --codec bc7 --container ktx2 /path/to/model.gltf
 ```
 
+## TODO
+
+- [ ] all codecs and containers for each backend
+  - [ ] basisu
+  - [ ] kram
+  - [ ] toktx
+- [ ] in-process compression, as-in without spawning separate processes to allow usage in more online use cases?
+- [ ] glb / embedded glTF support
+
 ## License
 
 `klafsa` is free and open source! All code in this repository is dual-licensed under either:
