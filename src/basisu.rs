@@ -7,6 +7,9 @@ use which::which;
 
 use crate::{CompressionFormat, Compressor, ContainerFormat, TextureType};
 
+pub const SUPPORTED_COMPRESSION_FORMATS: [CompressionFormat; 2] =
+    [CompressionFormat::Etc1s, CompressionFormat::Uastc];
+
 pub struct BasisU {
     cli_path: PathBuf,
 }
@@ -34,25 +37,31 @@ impl Compressor for BasisU {
         compression_format: CompressionFormat,
         container_format: ContainerFormat,
     ) -> Result<(), String> {
-        if !matches!(compression_format, CompressionFormat::Uastc)
+        if !SUPPORTED_COMPRESSION_FORMATS.contains(&compression_format)
             || !matches!(container_format, ContainerFormat::Ktx2)
         {
             return Err(format!(
-                "Unsupported format {:?} {:?} - must be UASTC and KTX2",
-                compression_format, container_format
+                "Unsupported format {:?} {:?} - must be one of {:?} and {}",
+                compression_format,
+                container_format,
+                SUPPORTED_COMPRESSION_FORMATS,
+                ContainerFormat::Ktx2,
             ));
         }
         let mut command = Command::new(&self.cli_path);
         command.current_dir(working_dir.as_ref());
-        command.args([
+        let mut args = vec![
             src_path.as_ref().to_str().unwrap(),
             "-output_file",
             dst_path.as_ref().to_str().unwrap(),
             "-mipmap",
             "-mip_fast",
-            "-uastc",
             "-ktx2",
-        ]);
+        ];
+        if matches!(compression_format, CompressionFormat::Uastc) {
+            args.push("-uastc");
+        }
+        command.args(args);
         match texture_type {
             TextureType::Srgb => command.arg("-mip_srgb"),
             TextureType::Linear => command.args(["-linear", "-mip_linear"]),
@@ -63,7 +72,10 @@ impl Compressor for BasisU {
                 if output.status.success() {
                     Ok(())
                 } else {
-                    Err(format!("Failed to execute command: {:?}", output))
+                    Err(format!(
+                        "Failed to execute command:\n{}",
+                        std::str::from_utf8(&output.stderr).unwrap()
+                    ))
                 }
             }
             Err(e) => Err(format!("Failed to execute command: {:?}", e)),

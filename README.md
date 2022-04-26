@@ -37,12 +37,13 @@ klafsa gltf --backend kram --codec bc7 --container ktx2 /path/to/model.gltf
 
 ## TODO
 
-- [ ] all codecs and containers for each backend
-  - [ ] basisu
-  - [ ] kram
-  - [ ] toktx
+- [x] all codecs and containers for each backend
+  - [x] basisu
+  - [x] kram
+  - [x] toktx
 - [ ] in-process compression, as-in without spawning separate processes to allow usage in more online use cases?
 - [ ] glb / embedded glTF support
+- [ ] support converting individual image files outside of a gltf
 
 ## License
 
