@@ -7,6 +7,34 @@
 
 'klafsa' means something like 'squelch' in Swedish. I wanted to use a word that has perhaps not been used for texture compression tools previously, and the space of English words is rather heavily used already.
 
+## Setup
+
+Make sure one of the above tools is in your `PATH`. Usual Rust cargo tooling can be used to build / install `klafsa` and then command-line usage is as follows:
+
+```
+klafsa 0.1.0
+Texture compression tool for converting JPEG/PNG to various compressed formats
+
+USAGE:
+    klafsa [OPTIONS] <SUBCOMMAND>
+
+OPTIONS:
+    -b, --backend <BACKEND>        [default: toktx]
+        --codec <CODEC>
+        --container <CONTAINER>
+    -h, --help                     Print help information
+    -V, --version                  Print version information
+
+SUBCOMMANDS:
+    gltf    Converts all JPEG/PNG textures referred to by a JSON-format glTF
+    help    Print this message or the help of the given subcommand(s)
+```
+
+The following would parse `model.gltf` to identify textures compressed with JPEG/PNG and use the `kram` tool to convert them to `bc7` in `ktx2`, also outputting a `model_bc7_ktx2.gltf` file next to the original:
+```
+klafsa gltf --backend kram --codec bc7 --container ktx2 /path/to/model.gltf
+```
+
 ## License
 
 `klafsa` is free and open source! All code in this repository is dual-licensed under either:

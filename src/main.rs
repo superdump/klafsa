@@ -12,9 +12,9 @@ struct Cli {
     command: Commands,
     #[clap(short, long, default_value_t = Backend::ToKtx)]
     backend: Backend,
-    #[clap(short, long)]
+    #[clap(long)]
     codec: Option<CompressionFormat>,
-    #[clap(short, long)]
+    #[clap(long)]
     container: Option<ContainerFormat>,
 }
 
