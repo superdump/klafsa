@@ -9,7 +9,7 @@ pub enum TextureType {
     NormalMap,
 }
 
-#[derive(Clone, Copy, Debug, ArgEnum, strum::Display, strum::EnumString, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, ArgEnum, strum::Display, strum::EnumString, PartialEq, Eq)]
 #[strum(serialize_all = "lowercase")]
 pub enum CompressionFormat {
     Astc,
@@ -23,16 +23,17 @@ pub enum CompressionFormat {
     Bc5,
     Bc7,
     Etc1s,
-    Etc2R,
-    Etc2Rg,
-    Etc2Rgb,
-    Etc2Rgba,
+    Etc2r,
+    Etc2rg,
+    Etc2rgb,
+    Etc2rgba,
     Uastc,
 }
 
-#[derive(Clone, Copy, Debug, ArgEnum, strum::Display, strum::EnumString)]
+#[derive(Clone, Copy, Debug, ArgEnum, strum::Display, strum::EnumString, PartialEq, Eq)]
 #[strum(serialize_all = "lowercase")]
 pub enum ContainerFormat {
+    Basis,
     Ktx2,
 }
 

@@ -14,9 +14,9 @@ pub use kram::*;
 pub use toktx::*;
 
 pub enum Backend {
-    BasisU(BasisU),
+    Basisu(Basisu),
     Kram(Kram),
-    ToKtx(ToKtx),
+    Toktx(Toktx),
 }
 
 impl Compressor for Backend {
@@ -30,7 +30,7 @@ impl Compressor for Backend {
         container_format: ContainerFormat,
     ) -> Result<(), String> {
         match self {
-            Backend::BasisU(basisu) => basisu.compress(
+            Backend::Basisu(basisu) => basisu.compress(
                 working_dir,
                 src_path,
                 dst_path,
@@ -46,7 +46,7 @@ impl Compressor for Backend {
                 compression_format,
                 container_format,
             ),
-            Backend::ToKtx(toktx) => toktx.compress(
+            Backend::Toktx(toktx) => toktx.compress(
                 working_dir,
                 src_path,
                 dst_path,
@@ -63,9 +63,9 @@ impl Compressor for Backend {
         container_format: Option<ContainerFormat>,
     ) -> (CompressionFormat, ContainerFormat) {
         match self {
-            Backend::BasisU(basisu) => basisu.get_formats(compression_format, container_format),
+            Backend::Basisu(basisu) => basisu.get_formats(compression_format, container_format),
             Backend::Kram(kram) => kram.get_formats(compression_format, container_format),
-            Backend::ToKtx(toktx) => toktx.get_formats(compression_format, container_format),
+            Backend::Toktx(toktx) => toktx.get_formats(compression_format, container_format),
         }
     }
 }

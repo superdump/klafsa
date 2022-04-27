@@ -11,7 +11,7 @@ struct Cli {
     #[clap(subcommand)]
     command: Commands,
     /// Which tool to use for compression
-    #[clap(short, long, arg_enum, default_value_t = Backend::ToKtx)]
+    #[clap(short, long, arg_enum, default_value_t = Backend::Toktx)]
     backend: Backend,
     /// Which codec to use for compression
     #[clap(long, arg_enum)]
@@ -35,9 +35,9 @@ struct Gltf {
 #[derive(Clone, Debug, ArgEnum, strum::Display, strum::EnumString)]
 #[strum(serialize_all = "lowercase")]
 enum Backend {
-    BasisU,
+    Basisu,
     Kram,
-    ToKtx,
+    Toktx,
 }
 
 fn main() {
@@ -46,7 +46,7 @@ fn main() {
     let cli = Cli::parse();
 
     let compressor = match cli.backend {
-        Backend::BasisU => klafsa::Backend::BasisU(match klafsa::BasisU::new() {
+        Backend::Basisu => klafsa::Backend::Basisu(match klafsa::Basisu::new() {
             Ok(basisu) => basisu,
             Err(e) => {
                 error!("Failed to create compressor: {}", e);
@@ -60,7 +60,7 @@ fn main() {
                 std::process::exit(1);
             }
         }),
-        Backend::ToKtx => klafsa::Backend::ToKtx(match klafsa::ToKtx::new() {
+        Backend::Toktx => klafsa::Backend::Toktx(match klafsa::Toktx::new() {
             Ok(kram) => kram,
             Err(e) => {
                 error!("Failed to create compressor: {}", e);

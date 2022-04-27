@@ -61,7 +61,7 @@ pub fn process_gltf<C: Compressor>(
                     warn!("Unsupported image format");
                     continue;
                 }
-                let dst_path = format!("{}.ktx2", uri.rsplit_once('.').unwrap().0);
+                let dst_path = format!("{}.{}", uri.rsplit_once('.').unwrap().0, container_format);
                 let texture_type = if linear_textures.contains(&texture.index()) {
                     TextureType::Linear
                 } else if normal_map_textures.contains(&texture.index()) {
@@ -87,17 +87,21 @@ pub fn process_gltf<C: Compressor>(
                 ) {
                     return Err(format!("{} - {}", uri, e));
                 }
-                gltf_root.images[texture.source().index()].mime_type =
-                    Some(MimeType(String::from("image/ktx2")));
+                gltf_root.images[texture.source().index()].mime_type = match container_format {
+                    // NOTE: There is no valid official mime type for .basis files
+                    ContainerFormat::Basis => None,
+                    ContainerFormat::Ktx2 => Some(MimeType(String::from("image/ktx2"))),
+                };
                 gltf_root.images[texture.source().index()].uri = Some(format!(
-                    "{}.ktx2",
+                    "{}.{}",
                     gltf_root.images[texture.source().index()]
                         .uri
                         .as_ref()
                         .unwrap()
                         .rsplit_once('.')
                         .unwrap()
-                        .0
+                        .0,
+                    container_format,
                 ));
             }
         }

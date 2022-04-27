@@ -17,10 +17,10 @@ pub const SUPPORTED_COMPRESSION_FORMATS: [CompressionFormat; 13] = [
     CompressionFormat::Bc4,
     CompressionFormat::Bc5,
     CompressionFormat::Bc7,
-    CompressionFormat::Etc2R,
-    CompressionFormat::Etc2Rg,
-    CompressionFormat::Etc2Rgb,
-    CompressionFormat::Etc2Rgba,
+    CompressionFormat::Etc2r,
+    CompressionFormat::Etc2rg,
+    CompressionFormat::Etc2rgb,
+    CompressionFormat::Etc2rgba,
 ];
 
 pub struct Kram {
@@ -102,16 +102,16 @@ impl Compressor for Kram {
             CompressionFormat::Bc7 => {
                 command.args(["-format", "bc7", "-encoder", "bcenc"]);
             }
-            CompressionFormat::Etc2R => {
+            CompressionFormat::Etc2r => {
                 command.args(["-format", "etc2r", "-encoder", "etcenc"]);
             }
-            CompressionFormat::Etc2Rg => {
+            CompressionFormat::Etc2rg => {
                 command.args(["-format", "etc2rg", "-encoder", "etcenc"]);
             }
-            CompressionFormat::Etc2Rgb => {
+            CompressionFormat::Etc2rgb => {
                 command.args(["-format", "etc2rgb", "-encoder", "etcenc"]);
             }
-            CompressionFormat::Etc2Rgba => {
+            CompressionFormat::Etc2rgba => {
                 command.args(["-format", "etc2rgba", "-encoder", "etcenc"]);
             }
             _ => {

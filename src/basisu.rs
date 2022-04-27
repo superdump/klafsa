@@ -10,11 +10,14 @@ use crate::{CompressionFormat, Compressor, ContainerFormat, TextureType};
 pub const SUPPORTED_COMPRESSION_FORMATS: [CompressionFormat; 2] =
     [CompressionFormat::Etc1s, CompressionFormat::Uastc];
 
-pub struct BasisU {
+pub const SUPPORTED_CONTAINER_FORMATS: [ContainerFormat; 2] =
+    [ContainerFormat::Basis, ContainerFormat::Ktx2];
+
+pub struct Basisu {
     cli_path: PathBuf,
 }
 
-impl BasisU {
+impl Basisu {
     pub fn new() -> Result<Self, String> {
         Ok(Self {
             cli_path: which("basisu").map_err(|e| {
@@ -27,7 +30,7 @@ impl BasisU {
     }
 }
 
-impl Compressor for BasisU {
+impl Compressor for Basisu {
     fn compress<D: AsRef<Path>>(
         &self,
         working_dir: D,
@@ -38,7 +41,7 @@ impl Compressor for BasisU {
         container_format: ContainerFormat,
     ) -> Result<(), String> {
         if !SUPPORTED_COMPRESSION_FORMATS.contains(&compression_format)
-            || !matches!(container_format, ContainerFormat::Ktx2)
+            || !SUPPORTED_CONTAINER_FORMATS.contains(&container_format)
         {
             return Err(format!(
                 "Unsupported format {:?} {:?} - must be one of {:?} and {}",
@@ -50,18 +53,19 @@ impl Compressor for BasisU {
         }
         let mut command = Command::new(&self.cli_path);
         command.current_dir(working_dir.as_ref());
-        let mut args = vec![
+        command.args([
             src_path.as_ref().to_str().unwrap(),
             "-output_file",
             dst_path.as_ref().to_str().unwrap(),
             "-mipmap",
             "-mip_fast",
-            "-ktx2",
-        ];
+        ]);
         if matches!(compression_format, CompressionFormat::Uastc) {
-            args.push("-uastc");
+            command.arg("-uastc");
         }
-        command.args(args);
+        if matches!(container_format, ContainerFormat::Ktx2) {
+            command.arg("-ktx2");
+        }
         match texture_type {
             TextureType::Srgb => command.arg("-mip_srgb"),
             TextureType::Linear => command.args(["-linear", "-mip_linear"]),

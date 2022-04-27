@@ -13,11 +13,11 @@ pub const SUPPORTED_COMPRESSION_FORMATS: [CompressionFormat; 3] = [
     CompressionFormat::Uastc,
 ];
 
-pub struct ToKtx {
+pub struct Toktx {
     cli_path: PathBuf,
 }
 
-impl ToKtx {
+impl Toktx {
     pub fn new() -> Result<Self, String> {
         Ok(Self {
             cli_path: which("toktx").map_err(|e| {
@@ -30,7 +30,7 @@ impl ToKtx {
     }
 }
 
-impl Compressor for ToKtx {
+impl Compressor for Toktx {
     fn compress<D: AsRef<Path>>(
         &self,
         working_dir: D,
