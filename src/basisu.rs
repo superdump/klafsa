@@ -85,15 +85,4 @@ impl Compressor for Basisu {
             Err(e) => Err(format!("Failed to execute command: {:?}", e)),
         }
     }
-
-    fn get_formats(
-        &self,
-        compression_format: Option<CompressionFormat>,
-        container_format: Option<ContainerFormat>,
-    ) -> (CompressionFormat, ContainerFormat) {
-        (
-            compression_format.unwrap_or(CompressionFormat::Uastc),
-            container_format.unwrap_or(ContainerFormat::Ktx2),
-        )
-    }
 }

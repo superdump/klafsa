@@ -14,16 +14,14 @@ use crate::{image::ImageFormat, CompressionFormat, Compressor, ContainerFormat, 
 pub fn process_gltf<C: Compressor>(
     src_path: &str,
     compressor: &C,
-    compression_format: Option<CompressionFormat>,
-    container_format: Option<ContainerFormat>,
+    compression_format: CompressionFormat,
+    container_format: ContainerFormat,
 ) -> Result<(), String> {
     let gltf = gltf::Gltf::open(src_path).expect("Failed to open file");
     let working_dir = Path::new(src_path).parent().map_or_else(
         || std::env::current_dir().expect("Failed to get parent directory of the glTF file"),
         |p| p.into(),
     );
-    let (compression_format, container_format) =
-        compressor.get_formats(compression_format, container_format);
 
     let mut normal_map_textures = HashSet::new();
     let mut linear_textures = HashSet::new();

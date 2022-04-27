@@ -56,16 +56,4 @@ impl Compressor for Backend {
             ),
         }
     }
-
-    fn get_formats(
-        &self,
-        compression_format: Option<CompressionFormat>,
-        container_format: Option<ContainerFormat>,
-    ) -> (CompressionFormat, ContainerFormat) {
-        match self {
-            Backend::Basisu(basisu) => basisu.get_formats(compression_format, container_format),
-            Backend::Kram(kram) => kram.get_formats(compression_format, container_format),
-            Backend::Toktx(toktx) => toktx.get_formats(compression_format, container_format),
-        }
-    }
 }

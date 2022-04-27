@@ -14,11 +14,11 @@ struct Cli {
     #[clap(short, long, arg_enum, default_value_t = Backend::Toktx)]
     backend: Backend,
     /// Which codec to use for compression
-    #[clap(long, arg_enum)]
-    codec: Option<CompressionFormat>,
+    #[clap(long, arg_enum, default_value_t = CompressionFormat::Uastc)]
+    codec: CompressionFormat,
     /// Which container format to use
-    #[clap(long, arg_enum)]
-    container: Option<ContainerFormat>,
+    #[clap(long, arg_enum, default_value_t = ContainerFormat::Ktx2)]
+    container: ContainerFormat,
 }
 
 #[derive(Debug, Subcommand)]

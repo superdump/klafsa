@@ -47,10 +47,4 @@ pub trait Compressor {
         compression_format: CompressionFormat,
         container_format: ContainerFormat,
     ) -> Result<(), String>;
-
-    fn get_formats(
-        &self,
-        compression_format: Option<CompressionFormat>,
-        container_format: Option<ContainerFormat>,
-    ) -> (CompressionFormat, ContainerFormat);
 }
