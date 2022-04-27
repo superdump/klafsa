@@ -19,12 +19,12 @@ USAGE:
     klafsa [OPTIONS] <SUBCOMMAND>
 
 OPTIONS:
-    -b, --backend <BACKEND>        Which tool to use for compression [default: to-ktx] [possible
-                                   values: basis-u, kram, to-ktx]
+    -b, --backend <BACKEND>        Which tool to use for compression [default: toktx] [possible
+                                   values: basisu, kram, toktx]
         --codec <CODEC>            Which codec to use for compression [possible values: astc,
                                    astc4x4, astc5x5, astc6x6, astc8x8, bc1, bc3, bc4, bc5, bc7,
-                                   etc1s, etc2-r, etc2-rg, etc2-rgb, etc2-rgba, uastc]
-        --container <CONTAINER>    Which container format to use [possible values: ktx2]
+                                   etc1s, etc2r, etc2rg, etc2rgb, etc2rgba, uastc]
+        --container <CONTAINER>    Which container format to use [possible values: basis, ktx2]
     -h, --help                     Print help information
     -V, --version                  Print version information
 
