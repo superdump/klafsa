@@ -1,5 +1,7 @@
 use std::path::Path;
 
+use clap::ArgEnum;
+
 #[derive(Debug)]
 pub enum TextureType {
     Srgb,
@@ -7,7 +9,7 @@ pub enum TextureType {
     NormalMap,
 }
 
-#[derive(Clone, Copy, Debug, strum::Display, strum::EnumString, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, ArgEnum, strum::Display, strum::EnumString, PartialEq, Eq, Hash)]
 #[strum(serialize_all = "lowercase")]
 pub enum CompressionFormat {
     Astc,
@@ -28,7 +30,7 @@ pub enum CompressionFormat {
     Uastc,
 }
 
-#[derive(Clone, Copy, Debug, strum::Display, strum::EnumString)]
+#[derive(Clone, Copy, Debug, ArgEnum, strum::Display, strum::EnumString)]
 #[strum(serialize_all = "lowercase")]
 pub enum ContainerFormat {
     Ktx2,

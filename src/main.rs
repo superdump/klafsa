@@ -1,4 +1,4 @@
-use clap::{Args, Parser, Subcommand};
+use clap::{ArgEnum, Args, Parser, Subcommand};
 use klafsa::{process_gltf, CompressionFormat, ContainerFormat};
 use tracing::{error, info, subscriber};
 use tracing_subscriber::{fmt, prelude::*, EnvFilter, Registry};
@@ -10,11 +10,14 @@ use tracing_subscriber::{fmt, prelude::*, EnvFilter, Registry};
 struct Cli {
     #[clap(subcommand)]
     command: Commands,
-    #[clap(short, long, default_value_t = Backend::ToKtx)]
+    /// Which tool to use for compression
+    #[clap(short, long, arg_enum, default_value_t = Backend::ToKtx)]
     backend: Backend,
-    #[clap(long)]
+    /// Which codec to use for compression
+    #[clap(long, arg_enum)]
     codec: Option<CompressionFormat>,
-    #[clap(long)]
+    /// Which container format to use
+    #[clap(long, arg_enum)]
     container: Option<ContainerFormat>,
 }
 
@@ -29,7 +32,7 @@ struct Gltf {
     file_path: String,
 }
 
-#[derive(Debug, strum::Display, strum::EnumString)]
+#[derive(Clone, Debug, ArgEnum, strum::Display, strum::EnumString)]
 #[strum(serialize_all = "lowercase")]
 enum Backend {
     BasisU,
