@@ -31,11 +31,11 @@ impl Toktx {
 }
 
 impl Compressor for Toktx {
-    fn compress<D: AsRef<Path>>(
+    fn compress(
         &self,
-        working_dir: D,
-        src_path: D,
-        dst_path: D,
+        working_dir: &Path,
+        src_path: &Path,
+        dst_path: &Path,
         texture_type: TextureType,
         compression_format: CompressionFormat,
         container_format: ContainerFormat,
@@ -52,7 +52,7 @@ impl Compressor for Toktx {
             ));
         }
         let mut command = Command::new(&self.cli_path);
-        command.current_dir(working_dir.as_ref());
+        command.current_dir(working_dir);
         match texture_type {
             TextureType::Srgb => command.args(["--assign_oetf", "srgb"]),
             TextureType::Linear => command.args(["--assign_oetf", "linear"]),
@@ -71,17 +71,15 @@ impl Compressor for Toktx {
                 command.args(["--zcmp", "18"]);
             }
         }
-        command.args([
-            dst_path.as_ref().to_str().unwrap(),
-            src_path.as_ref().to_str().unwrap(),
-        ]);
+        command.args([dst_path.to_str().unwrap(), src_path.to_str().unwrap()]);
         match command.output() {
             Ok(output) => {
                 if output.status.success() {
                     Ok(())
                 } else {
                     Err(format!(
-                        "Failed to execute command:\n{}",
+                        "Failed to execute command: {:?}\n{}",
+                        command.get_args(),
                         std::str::from_utf8(&output.stderr).unwrap()
                     ))
                 }

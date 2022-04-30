@@ -5,55 +5,17 @@ mod image;
 mod kram;
 mod toktx;
 
-use std::path::Path;
-
 pub use crate::gltf::*;
 pub use basisu::*;
+use clap::ArgEnum;
 pub use compressor::*;
 pub use kram::*;
 pub use toktx::*;
 
+#[derive(Clone, Debug, ArgEnum, strum::Display, strum::EnumString, PartialEq, Eq, Hash)]
+#[strum(serialize_all = "lowercase")]
 pub enum Backend {
-    Basisu(Basisu),
-    Kram(Kram),
-    Toktx(Toktx),
-}
-
-impl Compressor for Backend {
-    fn compress<P: AsRef<Path>>(
-        &self,
-        working_dir: P,
-        src_path: P,
-        dst_path: P,
-        texture_type: TextureType,
-        compression_format: CompressionFormat,
-        container_format: ContainerFormat,
-    ) -> Result<(), String> {
-        match self {
-            Backend::Basisu(basisu) => basisu.compress(
-                working_dir,
-                src_path,
-                dst_path,
-                texture_type,
-                compression_format,
-                container_format,
-            ),
-            Backend::Kram(kram) => kram.compress(
-                working_dir,
-                src_path,
-                dst_path,
-                texture_type,
-                compression_format,
-                container_format,
-            ),
-            Backend::Toktx(toktx) => toktx.compress(
-                working_dir,
-                src_path,
-                dst_path,
-                texture_type,
-                compression_format,
-                container_format,
-            ),
-        }
-    }
+    Basisu,
+    Kram,
+    Toktx,
 }

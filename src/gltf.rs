@@ -1,124 +1,244 @@
 use std::{
-    collections::HashSet,
+    collections::{HashMap, HashSet},
     fs::File,
     io::{BufReader, BufWriter},
     path::Path,
 };
 
+use clap::Args;
 use gltf::json::{image::MimeType, Root};
 use indicatif::{ProgressBar, ProgressStyle};
+use strum::IntoEnumIterator;
 use tracing::{error, info, warn};
 
-use crate::{image::ImageFormat, CompressionFormat, Compressor, ContainerFormat, TextureType};
+use crate::{
+    image::ImageFormat, Backend, Basisu, CompressionFormat, Compressor, ContainerFormat, Kram,
+    TextureType, Toktx,
+};
 
-pub fn process_gltf<C: Compressor>(
-    src_path: &str,
-    compressor: &C,
-    compression_format: CompressionFormat,
-    container_format: ContainerFormat,
-) -> Result<(), String> {
-    let gltf = gltf::Gltf::open(src_path).expect("Failed to open file");
-    let working_dir = Path::new(src_path).parent().map_or_else(
-        || std::env::current_dir().expect("Failed to get parent directory of the glTF file"),
-        |p| p.into(),
-    );
+#[derive(Args, Debug)]
+pub struct Gltf {
+    /// Path to the JSON-format .gltf file
+    pub file_path: String,
+    /// Compress to all formats
+    #[clap(long)]
+    compress_to_all: bool,
+}
 
-    let mut normal_map_textures = HashSet::new();
-    let mut linear_textures = HashSet::new();
-    for material in gltf.materials() {
-        if let Some(texture) = material.normal_texture() {
-            normal_map_textures.insert(texture.texture().index());
+impl Gltf {
+    pub fn process(
+        &self,
+        backend: Backend,
+        compression_format: CompressionFormat,
+        container_format: ContainerFormat,
+    ) -> Result<(), String> {
+        if !self.file_path.to_lowercase().ends_with(".gltf") {
+            error!("File must be a JSON-format glTF file with a .gtlf file extension");
+            std::process::exit(1);
         }
-        if let Some(texture) = material.occlusion_texture() {
-            linear_textures.insert(texture.texture().index());
-        }
-        if let Some(texture) = material
-            .pbr_metallic_roughness()
-            .metallic_roughness_texture()
-        {
-            linear_textures.insert(texture.texture().index());
-        }
-    }
 
-    let mut gltf_root = read_gltf_to_json(src_path);
+        info!("Processing {}", self.file_path);
 
-    let progress_bar = ProgressBar::new(gltf.textures().len() as u64).with_style(
-        ProgressStyle::default_bar()
-            .template("{pos}/{len} [{elapsed_precise}]/[{duration_precise}] {wide_bar} {msg}"),
-    );
-    progress_bar.enable_steady_tick(1000);
+        let gltf = gltf::Gltf::open(&self.file_path).expect("Failed to open file");
+        let working_dir = Path::new(&self.file_path).parent().map_or_else(
+            || std::env::current_dir().expect("Failed to get parent directory of the glTF file"),
+            |p| p.into(),
+        );
 
-    for texture in gltf.textures() {
-        match texture.source().source() {
-            gltf::image::Source::View { mime_type, .. } => {
-                warn!("Cannot process texture views. (Mime-type: {})", mime_type);
-                continue;
+        let mut normal_map_textures = HashSet::new();
+        let mut linear_textures = HashSet::new();
+        for material in gltf.materials() {
+            if let Some(texture) = material.normal_texture() {
+                normal_map_textures.insert(texture.texture().index());
             }
-            gltf::image::Source::Uri { uri, mime_type } => {
-                if ImageFormat::from_mime_or_extension(mime_type, Some(uri)).is_none() {
-                    warn!("Unsupported image format");
+            if let Some(texture) = material.occlusion_texture() {
+                linear_textures.insert(texture.texture().index());
+            }
+            if let Some(texture) = material
+                .pbr_metallic_roughness()
+                .metallic_roughness_texture()
+            {
+                linear_textures.insert(texture.texture().index());
+            }
+        }
+
+        let formats = self.get_formats(compression_format);
+        let compressors = self.get_compressors(backend);
+
+        let gltf_root = read_gltf_to_json(&self.file_path);
+        let mut gltf_roots = vec![gltf_root; formats.len()];
+
+        let progress_bar = ProgressBar::new((formats.len() * gltf.textures().len()) as u64)
+            .with_style(
+                ProgressStyle::default_bar().template(
+                    "{pos}/{len} [{elapsed_precise}]/[{duration_precise}] {wide_bar} {msg}",
+                ),
+            );
+        progress_bar.enable_steady_tick(1000);
+
+        for texture in gltf.textures() {
+            match texture.source().source() {
+                gltf::image::Source::View { mime_type, .. } => {
+                    warn!("Cannot process texture views. (Mime-type: {})", mime_type);
+                    progress_bar.inc(formats.len() as u64);
                     continue;
                 }
-                let dst_path = format!("{}.{}", uri.rsplit_once('.').unwrap().0, container_format);
-                let texture_type = if linear_textures.contains(&texture.index()) {
-                    TextureType::Linear
-                } else if normal_map_textures.contains(&texture.index()) {
-                    TextureType::NormalMap
-                } else {
-                    TextureType::Srgb
-                };
-                progress_bar.set_message(
-                    Path::new(uri)
-                        .file_name()
-                        .unwrap()
-                        .to_os_string()
-                        .into_string()
-                        .unwrap(),
-                );
-                if let Err(e) = compressor.compress(
-                    working_dir.to_str().unwrap(),
-                    uri,
-                    dst_path.as_str(),
-                    texture_type,
-                    compression_format,
-                    container_format,
-                ) {
-                    return Err(format!("{} - {}", uri, e));
+                gltf::image::Source::Uri { uri, mime_type } => {
+                    if ImageFormat::from_mime_or_extension(mime_type, Some(uri)).is_none() {
+                        warn!("Unsupported image format");
+                        progress_bar.inc(formats.len() as u64);
+                        continue;
+                    }
+                    let texture_type = if linear_textures.contains(&texture.index()) {
+                        TextureType::Linear
+                    } else if normal_map_textures.contains(&texture.index()) {
+                        TextureType::NormalMap
+                    } else {
+                        TextureType::Srgb
+                    };
+                    progress_bar.set_message(
+                        Path::new(uri)
+                            .file_name()
+                            .unwrap()
+                            .to_os_string()
+                            .into_string()
+                            .unwrap(),
+                    );
+                    for (format, gltf_root) in formats.iter().zip(gltf_roots.iter_mut()) {
+                        let src_path = Path::new(uri);
+                        let container = self.get_container(*format, container_format);
+                        let dst_path = src_path
+                            .parent()
+                            .unwrap()
+                            .join(format!("{}_{}", format, container))
+                            .join(format!(
+                                "{}_{}.{}",
+                                src_path.file_stem().unwrap().to_str().unwrap(),
+                                format,
+                                container
+                            ));
+                        if let Err(e) =
+                            std::fs::create_dir_all(working_dir.join(dst_path.parent().unwrap()))
+                        {
+                            error!(
+                                "Failed to recursively create directory: {} - {}",
+                                dst_path.parent().unwrap().display(),
+                                e
+                            );
+                            progress_bar.inc(1);
+                            continue;
+                        }
+                        if let Err(e) = compressors[&format.backend().unwrap()].compress(
+                            &working_dir,
+                            src_path,
+                            &dst_path,
+                            texture_type,
+                            *format,
+                            container,
+                        ) {
+                            error!("{} -> {} - {}", uri, dst_path.display(), e);
+                            progress_bar.inc(1);
+                            continue;
+                        }
+                        gltf_root.images[texture.source().index()].mime_type = match container {
+                            // NOTE: There is no valid official mime type for .basis files
+                            ContainerFormat::Basis => None,
+                            ContainerFormat::Ktx2 => Some(MimeType(String::from("image/ktx2"))),
+                        };
+                        gltf_root.images[texture.source().index()].uri =
+                            Some(dst_path.display().to_string());
+                    }
                 }
-                gltf_root.images[texture.source().index()].mime_type = match container_format {
-                    // NOTE: There is no valid official mime type for .basis files
-                    ContainerFormat::Basis => None,
-                    ContainerFormat::Ktx2 => Some(MimeType(String::from("image/ktx2"))),
-                };
-                gltf_root.images[texture.source().index()].uri = Some(format!(
-                    "{}.{}",
-                    gltf_root.images[texture.source().index()]
-                        .uri
-                        .as_ref()
-                        .unwrap()
-                        .rsplit_once('.')
-                        .unwrap()
-                        .0,
-                    container_format,
-                ));
+            }
+            progress_bar.inc(1);
+        }
+        progress_bar.finish();
+
+        for (format, gltf_root) in formats.iter().zip(gltf_roots.into_iter()) {
+            let dst_path = self
+                .file_path
+                .rsplit_once('.')
+                .map(|(path, extension)| {
+                    format!(
+                        "{}_{}_{}.{}",
+                        path,
+                        format,
+                        if self.compress_to_all {
+                            format.container()
+                        } else {
+                            container_format
+                        },
+                        extension
+                    )
+                })
+                .expect("Failed to create compressed glTF filename");
+            write_json_to_gltf(gltf_root, &dst_path);
+        }
+
+        Ok(())
+    }
+
+    fn get_formats(&self, compression_format: CompressionFormat) -> Vec<CompressionFormat> {
+        if self.compress_to_all {
+            CompressionFormat::iter()
+                .filter(|f| f.backend().is_some())
+                .collect::<Vec<_>>()
+        } else {
+            vec![compression_format]
+        }
+    }
+
+    fn get_compressors(&self, backend: Backend) -> HashMap<Backend, Box<dyn Compressor>> {
+        let mut compressors: HashMap<Backend, Box<dyn Compressor>> = HashMap::new();
+        if self.compress_to_all {
+            compressors.insert(
+                Backend::Basisu,
+                Box::new(Basisu::new().expect("Failed to create basisu compressor")),
+            );
+            compressors.insert(
+                Backend::Kram,
+                Box::new(Kram::new().expect("Failed to create kram compressor")),
+            );
+            compressors.insert(
+                Backend::Toktx,
+                Box::new(Toktx::new().expect("Failed to create toktx compressor")),
+            );
+        } else {
+            match backend {
+                Backend::Basisu => {
+                    compressors.insert(
+                        Backend::Basisu,
+                        Box::new(Basisu::new().expect("Failed to create basisu compressor")),
+                    );
+                }
+                Backend::Kram => {
+                    compressors.insert(
+                        Backend::Kram,
+                        Box::new(Kram::new().expect("Failed to create kram compressor")),
+                    );
+                }
+                Backend::Toktx => {
+                    compressors.insert(
+                        Backend::Toktx,
+                        Box::new(Toktx::new().expect("Failed to create toktx compressor")),
+                    );
+                }
             }
         }
-        progress_bar.inc(1);
+        compressors
     }
-    progress_bar.finish();
 
-    let dst_path = src_path
-        .rsplit_once('.')
-        .map(|(path, extension)| {
-            format!(
-                "{}_{}_{}.{}",
-                path, compression_format, container_format, extension
-            )
-        })
-        .expect("Failed to create compressed glTF filename");
-    write_json_to_gltf(gltf_root, &dst_path);
-
-    Ok(())
+    fn get_container(
+        &self,
+        compression_format: CompressionFormat,
+        container_format: ContainerFormat,
+    ) -> ContainerFormat {
+        if self.compress_to_all {
+            compression_format.container()
+        } else {
+            container_format
+        }
+    }
 }
 
 fn read_gltf_to_json<P: AsRef<Path>>(src_path: P) -> Root {

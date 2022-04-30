@@ -44,6 +44,7 @@ klafsa gltf --backend kram --codec bc7 --container ktx2 /path/to/model.gltf
   - [x] basisu
   - [x] kram
   - [x] toktx
+- [x] single command to convert to all formats
 - [ ] in-process compression, as-in without spawning separate processes to allow usage in more online use cases?
 - [ ] glb / embedded glTF support
 - [ ] support converting individual image files outside of a gltf

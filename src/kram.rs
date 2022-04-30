@@ -41,11 +41,11 @@ impl Kram {
 }
 
 impl Compressor for Kram {
-    fn compress<D: AsRef<Path>>(
+    fn compress(
         &self,
-        working_dir: D,
-        src_path: D,
-        dst_path: D,
+        working_dir: &Path,
+        src_path: &Path,
+        dst_path: &Path,
         texture_type: TextureType,
         compression_format: CompressionFormat,
         container_format: ContainerFormat,
@@ -62,13 +62,13 @@ impl Compressor for Kram {
             ));
         }
         let mut command = Command::new(&self.cli_path);
-        command.current_dir(working_dir.as_ref());
+        command.current_dir(working_dir);
         command.args([
             "encode",
             "-input",
-            src_path.as_ref().to_str().unwrap(),
+            src_path.to_str().unwrap(),
             "-output",
-            dst_path.as_ref().to_str().unwrap(),
+            dst_path.to_str().unwrap(),
             "-mipmin",
             "1",
             "-zstd",
